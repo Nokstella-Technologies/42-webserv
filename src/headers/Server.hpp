@@ -2,12 +2,13 @@
 #ifndef CONFIGURATION_HPP
 #define CONFIGURATION_HPP
 
-#include <iostream>
 #include <map>
+#include <iostream>
 #include <stdexcept>
 #include <fstream>
 #include <string>
 #include <vector>
+
 
 #define SLABEL "server"
 
