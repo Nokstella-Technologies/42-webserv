@@ -1,0 +1,8 @@
+[[server]]
+
+[server.routes."/"]
+index = "index.html"
+root = "/var/www/html"
+
+[server.routes."/api"]
+handle = "api"

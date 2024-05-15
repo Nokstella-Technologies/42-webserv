@@ -1,0 +1,41 @@
+# Sample Configuration File
+
+# General server settings
+[[server]]
+listen = 8080                                  
+server_name = "localhost"
+client_max_body_size = "10M"
+
+# Default error pages
+[server.error_pages]
+404 = "/404.html"
+500 = "/500.html"
+
+# First server for a host:port becomes the default
+[[server]]
+listen = "127.0.0.1:2000"
+server_name = "localhost"
+client_max_body_size = "10K"
+# Route configurations
+root = "./server/localhost"
+index = "index.html"
+
+[server.routes."/upload"]
+allow_methods = ["POST"]
+upload_directory = "/path/to/uploads"
+
+[server.routes."/cgi-bin"]
+allow_methods = ["GET", "POST"]
+cgi_extension = ".cgi"
+
+[[server]]
+listen = 8001
+server_name = ["llima-ce.42.fr", "www.localhost"]
+root = "./server/llima-ce"
+index = "index2.html"
+error_pages = {404 = "custom_404.html", 405 = "custom_405.html"}
+client_max_body_size = 100
+
+
+[server.routes."/"]
+allow_methods = "GET"

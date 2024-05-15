@@ -1,0 +1,65 @@
+[[servers]]
+listen = ["127.0.0.1:3490"]
+server_name = ["www.localhost", "localhost"]
+root = "server_root"
+index = ["index.html","index.php"]
+error_page = {404 = "custom_404.html", 405 = "custom_405.html"}
+timeout = 50000
+client_max_body_size = "10M"
+cgi = [".php", "php-cgi", ".py", "python3"]
+
+[servers.location."/"]
+limit_except = "GET"
+
+[servers.location."/delete"]
+autoindex = "on"
+limit_except = ["GET", "DELETE"]
+root = ["server_root", "/file_upload/uploads"]
+
+[servers.location."/redirect_301"]
+return = {301 = "https://http.cat/301"}
+
+[servers.location."/redirect_302"]
+return = {302 = "https://http.cat/302"}
+
+[servers.location."/cookie"]
+root = "server_root/cookie"
+limit_except = ["GET","POST"]
+
+[servers.location."/session"]
+root = "server_root/session"
+limit_except = ["GET","POST"]
+
+[servers.location."/form"]
+root = "server_root/form"
+limit_except = ["GET","POST"]
+[servers.location."/file_upload"]
+root = "server_root/file_upload"
+limit_except = ["GET","POST"]
+
+[servers.location."/post"]
+root = "server_root/post"
+index = "register.html"
+limit_except = ["GET","POST"]
+
+[servers.location."/uploads"]
+root = "server_root/file_upload/uploads"
+autoindex = "on"
+limit_except = ["GET","POST"]
+
+[servers.location."/directory"]
+root = "server_root/directory"
+autoindex = "on"
+
+
+[[servers]]
+listen = "127.0.0.1:3491"
+server_name = ["www.localhost1","localhost1"]
+root = "server_root"
+index = "index2.html"
+error_page = {404 = "custom_404.html", 405 = "custom_405.html"}
+timeout = 50000
+client_max_body_size = "10K"
+
+[servers.location."/"]
+limit_except = "GET"
