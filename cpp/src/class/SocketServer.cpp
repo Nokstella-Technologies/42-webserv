@@ -56,6 +56,8 @@ namespace Config
     }
     Server *SocketServer::getServer(std::string host) 
     {
+        if (servers.find(host) == servers.end())
+            return NULL;
         return this->servers[host];
     }
     

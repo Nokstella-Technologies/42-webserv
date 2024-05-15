@@ -36,6 +36,7 @@ namespace WebServer {
         std::string     strRoute;
         Config::Server  *server;
         Config::Routes  *route;
+        
 
         public:
         Request();

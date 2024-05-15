@@ -14,12 +14,11 @@
 #include "Server.hpp"
 #include "Routes.hpp"
 
+#define ERRORDEFAULTURL "https://http.cat/status/"
+
 
 namespace WebServer
-{
-
-    
-
+{   
     class Response
     {
         protected:
@@ -54,6 +53,17 @@ namespace WebServer
             explicit ResponseStatic( Config::Server *server, Config::Routes *routes, std::string path, std::string root);
             void createPath();
             void execute();
+    };
+
+    class ResponseError : public Response
+    {
+        private:
+            int _error_code;
+        public:
+            ~ResponseError() {};
+            explicit ResponseError(Config::Server *server, Config::Routes *routes, int error_code);
+            void execute();
+
     };
     
     

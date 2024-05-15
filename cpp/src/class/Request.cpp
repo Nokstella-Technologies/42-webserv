@@ -1,6 +1,6 @@
 #include "Request.hpp"
 #include <stdlib.h>
-WebServer::Request::Request(): body(""), host(""), path(""), method(GET), body_length(0) ,content_type(""), strRoute(""), server(NULL), route(NULL) {}
+WebServer::Request::Request(): body(""), host(""), path(""), method(GET), body_length(-1) ,content_type(""), strRoute(""), server(NULL), route(NULL) {}
 
 WebServer::Request::Request(std::string body, std::string host, std::string path, Methods method): body(body), host(host), path(path), method(method), body_length(body.length()) ,content_type("") , strRoute(""), server(NULL), route(NULL) {}
 
@@ -12,7 +12,7 @@ WebServer::Methods WebServer::getMethodE(std::string method) {
     else if (method == "DELETE")
         return DELETE;
     else
-        throw Excp::ErrorRequest("Method not supported");
+        throw Excp::ErrorRequest("Method not supported", 405);
 }
 
 WebServer::Request WebServer::Request::newRequest(int fd_request) throw(Excp::SocketCreation) {
@@ -26,7 +26,7 @@ WebServer::Request WebServer::Request::newRequest(int fd_request) throw(Excp::So
         std::cout << "Received: " << bytes_received << std::endl;
         buffer[bytes_received] = '\0';
         if (bytes_received < 0)
-            throw Excp::ErrorRequest("error receiving data from client ");
+            throw Excp::ErrorRequest("error receiving data from client ", 400);
         else 
             requestContent.append(buffer, bytes_received);
     }
@@ -50,7 +50,7 @@ WebServer::Request WebServer::Request::newRequest(int fd_request) throw(Excp::So
             isBody = true;
         } else if (isBody) {
             req.body += line;
-        }
+        } 
     }
     std::cout << "+++++++++++++REQUEST INFOS: +++++++++" << std::endl << req  ;
     return req;
@@ -78,18 +78,47 @@ std::ostream &operator<<(std::ostream &os, const WebServer::Request &req) {
 void WebServer::Request::verifyheaders(Config::SocketServer *socket) throw(Excp::ErrorRequest) {
     Config::Server *server = socket->getServer(getHost());
     if (server == NULL)
-        throw Excp::ErrorRequest("Host not found");
-    if (getBodyLength() > server->getClientMaxBodySize()) 
-        throw Excp::ErrorRequest("Body size too large");
+        throw Excp::ErrorRequest("Host not found", 404);
     Config::Routes *location = server->getLocations(getPath());
-    if (location != NULL && server->getRoot() == "")
-        throw Excp::ErrorRequest("Location not found");
     setServer(server);
     setRoute(location);
+    if (getBodyLength() == -1 && method == POST) 
+        throw Excp::ErrorRequest("Body size too large", 411);
+    if (getBodyLength() > server->getClientMaxBodySize()) 
+        throw Excp::ErrorRequest("Body size too large", 413);
+    if (location != NULL && !server->isStatic())
+        throw Excp::ErrorRequest("Location not found", 404);
 }
 
+
+
+
+
+
+
+
+// Verificar qual sera o tipo de resposta
+// static
+// cgi
+// upload
+// redirecionamento
+// chuncked
 WebServer::Response* WebServer::Request::execute() {
-    ResponseStatic *res =  new ResponseStatic(server, route, this->getPath(), this->getStrRoute()); 
-    
+    Response *res = nullptr;
+    if (route == NULL) {
+        if (server->isStatic()) {
+            res =  new ResponseStatic(server, route, this->getPath(), this->getStrRoute()); 
+        }
+    }
+    else if (route->isStatic())
+        res =  new ResponseStatic(server, route, this->getPath(), this->getStrRoute()); 
+    else if (route->isRedirection())
+        return nullptr;
+    else if (route->isUpload())
+        return nullptr;
+    else if (route->isCGI())
+        return nullptr;
+    else
+        res = new ResponseError(server, route, 404);
     return res;
 }

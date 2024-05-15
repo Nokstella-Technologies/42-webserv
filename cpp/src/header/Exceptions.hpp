@@ -98,8 +98,9 @@ class EpollCreation : public std::exception
 class ErrorRequest : public std::exception
 {
     public:
+    int _error_code;
     std::string _fd;
-    ErrorRequest(std::string fd): std::exception(), _fd("Nothing recived from fd " + fd) {};
+    ErrorRequest(std::string fd, int error_code): std::exception(), _error_code(error_code), _fd("Nothing recived from fd " + fd) {};
      ~ErrorRequest() throw() {}
    const char* what(void) const throw() {
         return _fd.c_str();

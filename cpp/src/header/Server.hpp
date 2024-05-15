@@ -63,6 +63,8 @@ namespace Config {
             void setConfig(std::string key, std::string value);
             void setLocationsConfig(std::string location, std::string key, std::string  value);
             void parseConfig();
+            bool isStatic();
+
     };
 };
     std::ostream &operator<<(std::ostream &os, const Config::Server &server);

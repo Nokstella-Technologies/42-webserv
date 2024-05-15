@@ -54,17 +54,24 @@ int WebServer::WebServer::_eppollWait() {
                 std::cerr << "connection not accept" << std::endl;
                 return 1;
             }
+
             std::cout << "Event on client coon: " << conn_sock << " "<< socket->getIpV4() << " " << client_fd << std::endl;
+            Response *res = NULL; 
+            Request req;
             try {
-                Request req = Request::newRequest(conn_sock);
+                req = Request::newRequest(conn_sock);
                 req.verifyheaders(socket);
-                Response *res = req.execute();
+                res = req.execute();
                 res->execute();
                 res->sendResponse(conn_sock);
-                delete res;
             } catch (Excp::ErrorRequest e) {
-                std::cout << e.what() << std::endl;
+                if (res != NULL)
+                    delete res;
+                res = new ResponseError(req.getServer(), req.getRoute(), e._error_code);
+                res->execute();
+                res->sendResponse(conn_sock);
             }
+            delete res;
             close(conn_sock);
             socket = NULL;
             conn_sock = -1;

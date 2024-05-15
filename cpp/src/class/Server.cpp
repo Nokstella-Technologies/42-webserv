@@ -69,6 +69,9 @@ namespace Config {
     }
 
     Config::Routes* Server::getLocations(std::string str){
+        if (locations.find(str) == locations.end()) {
+            return NULL;
+        }
         return locations[str];
     }
 
@@ -120,6 +123,10 @@ namespace Config {
             errorPages[atoi(code.c_str())] = path;
         }
     }
+
+      bool Server::isStatic() {
+        return true;
+      }
 
 } 
 

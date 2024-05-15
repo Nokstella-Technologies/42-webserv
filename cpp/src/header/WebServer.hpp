@@ -5,6 +5,7 @@
 
 #include <SocketServer.hpp>
 #include <Request.hpp>
+#include <Response.hpp>
 #include <cstdio>
 #include <map>
 #include <Server.hpp>

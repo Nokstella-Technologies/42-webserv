@@ -43,10 +43,7 @@ namespace WebServer
         std::cout << _file << std::endl;
         _f.open(_file.c_str());
         if (!_f.is_open()) {
-            std::cout << "error open file "<< std::endl;
-            _status_code = 404;
-            _response += "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: 10\n\nError 404\n";
-            return;
+            throw Excp::ErrorRequest("File not found", 404);
         }
         std::ostringstream os;
         os << _f.rdbuf();

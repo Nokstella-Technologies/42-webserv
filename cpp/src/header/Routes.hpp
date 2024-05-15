@@ -15,6 +15,11 @@ namespace Config {
             ~Routes();
             const std::map<std::string, std::string> & getConfig() const;
             void setConfig(std::string key, std::string value);
+            bool isCGI();
+            bool isStatic();
+            bool isRedirection();
+            bool isUpload();
+
            
     };
 };
