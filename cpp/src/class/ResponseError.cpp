@@ -9,9 +9,27 @@ namespace WebServer
         _error_code = error_code;
     }
     void ResponseError::execute(){
-        _response = "HTTP/1.1 301 Moved Permanently\r\n";
-        _response += "Location: " +  std::string(ERRORDEFAULTURL) + std::to_string(_error_code) + "\r\n";
-        _response += "\r\n";
-        std::cout << "+++++++++++++ response error +++++++++++++" <<_response << std::endl; // End of headers;
+        std::string file;
+        std::string root;
+        if (_routes != NULL) {
+            file = _routes->getErrorPage(_error_code);
+            root = _routes->getRoot();
+        }
+        if (file == "") 
+            file = _server->getErrorPage(_error_code);
+        if (root == "") 
+            root = _server->getRoot();
+        if (file != "") {
+            utils::ends_with(root, "/") ? root : root.append("/");
+            file = utils::trim(file, "./");
+            file = read_file(root + file);
+            _status_code = _error_code;
+            _response = file;
+            _headers["Content-Length"] = std::to_string(_response.length());
+        } 
+        else {
+            _status_code = 301;
+            _headers["Location"] = std::string(ERRORDEFAULTURL) + std::to_string(_error_code);
+        }
     }
 }

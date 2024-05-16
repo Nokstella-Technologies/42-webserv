@@ -5,11 +5,11 @@
 listen = 8080                                  
 server_name = "localhost"
 client_max_body_size = "10M"
-
+root = "./server/localhost"
 # Default error pages
 [server.error_pages]
-404 = "/404.html"
-500 = "/500.html"
+404 = "custom_404.html"
+
 
 # First server for a host:port becomes the default
 [[server]]
@@ -25,8 +25,13 @@ allow_methods = ["POST"]
 upload_directory = "/path/to/uploads"
 
 [server.routes."/cgi-bin"]
+
 allow_methods = ["GET", "POST"]
 cgi_extension = ".cgi"
+
+[server.routes."/error"]
+root = "./server/localhost"
+error_pages = {404 = "custom_404.html"}
 
 [[server]]
 listen = 8001

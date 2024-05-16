@@ -23,6 +23,20 @@ namespace Config {
         }
         return result;
     };
+
+    
+    std::map<int, std::string> _parseErrorPages(std::string value) {
+        std::string line = utils::trim(value, "{}");
+        std::map<int, std::string> errorPages;
+        std::vector<std::string> error_pages = utils::split(line, ",");
+
+        for(std::vector<std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++) {
+            std::string code = utils::trim(it->substr(0, it->find("=")));
+            std::string path = utils::trim(it->substr(it->find("=") + 1));
+            errorPages[atoi(code.c_str())] = utils::trim(path, "\"");
+        }
+        return errorPages;
+    }
    
     Server::Server() : locations(), errorPages(), config(), serverName(), port(), index(), root(""), clientMaxBodySize(0){
     }
@@ -68,6 +82,15 @@ namespace Config {
         config[key] = value;
     }
 
+    Config::Routes* Server::FindLocation(std::string path) {
+        for (std::map<std::string, Routes *>::iterator it = locations.begin(); it != locations.end(); it++) {
+            if (utils::starts_with(path, it->first)) {
+                return it->second;
+            }
+        }
+        return NULL;
+    }
+
     Config::Routes* Server::getLocations(std::string str){
         if (locations.find(str) == locations.end()) {
             return NULL;
@@ -82,11 +105,16 @@ namespace Config {
         locations[location]->setConfig(key, value);
     }
 
+    std::string Config::Server::getErrorPage(int error_code) {
+    if (errorPages.find(error_code) == errorPages.end())
+        return "";
+    return errorPages[error_code];
+}
     void Server::parseConfig() {
         for (std::map<std::string, std::string>::iterator it = config.begin(); it != config.end(); it++) { // Replace 'string' with 'std::string'
             std::string key = utils::trim(it->first);
             if (key == ERRORLABEL) {
-                _parseErrorPages(it->second);
+                errorPages = _parseErrorPages(it->second);
             } else if (key == SNAMELB) {
                 serverName = _parseArray<std::string>(it->second);
             } else if (key == LISTENLB) {
@@ -106,23 +134,14 @@ namespace Config {
                 } else if (it->second.find("K") != std::string::npos) {
                     clientMaxBodySize *= 1024;
                 }
-            } else {
-                std::cout << key << "." << std::endl;
-                throw Excp::BadLabel(key);
-            }
+            } 
         };
-    }
-
-    void Server::_parseErrorPages(std::string value) {
-        std::string line = utils::trim(value, "{}");
-        std::vector<std::string> error_pages = utils::split(line, ",");
-
-        for(std::vector<std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++) {
-            std::string code = utils::trim(it->substr(0, it->find("=")));
-            std::string path = utils::trim(it->substr(it->find("=") + 1));
-            errorPages[atoi(code.c_str())] = path;
+        for (std::map<std::string, Routes *>::iterator it = locations.begin(); it != locations.end(); it++) {
+            it->second->parseConfig();
         }
     }
+
+    
 
       bool Server::isStatic() {
         return true;

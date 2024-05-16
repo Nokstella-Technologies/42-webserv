@@ -79,7 +79,7 @@ void WebServer::Request::verifyheaders(Config::SocketServer *socket) throw(Excp:
     Config::Server *server = socket->getServer(getHost());
     if (server == NULL)
         throw Excp::ErrorRequest("Host not found", 404);
-    Config::Routes *location = server->getLocations(getPath());
+    Config::Routes *location = server->FindLocation(getPath());
     setServer(server);
     setRoute(location);
     if (getBodyLength() == -1 && method == POST) 

@@ -4,7 +4,9 @@
 #include <Configuration.hpp>
 #include <SocketServer.hpp>
 #include <WebServer.hpp>
+#include "Response.hpp"
 #define MAX_EVENTS 10
+
 
 
 int main(int argc, char *argv[])
@@ -31,6 +33,7 @@ int main(int argc, char *argv[])
 	{
 		std::cout << "Loading file: " << path << std::endl;
 		config.loadMimeTypes(mimeType);
+		initialize_http_messages();
 		config.loadFile(path);
 		std::cout << config;
 		webserver = config.createSockets();

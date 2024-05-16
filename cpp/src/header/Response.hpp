@@ -15,10 +15,14 @@
 #include "Routes.hpp"
 
 #define ERRORDEFAULTURL "https://http.cat/status/"
+extern void initialize_http_messages() ;
+extern std::map<int, std::string> responseHttpMessages;
+
 
 
 namespace WebServer
 {   
+    std::string read_file(const std::string &path);
     class Response
     {
         protected:
@@ -64,6 +68,16 @@ namespace WebServer
             explicit ResponseError(Config::Server *server, Config::Routes *routes, int error_code);
             void execute();
 
+    };
+
+    class ResponseProxyPass : public Response
+    {
+        private:
+            std::string _request;
+        public:
+            ~ResponseProxyPass() {};
+            explicit ResponseProxyPass(Config::Server *server, Config::Routes *routes, std::string _req);
+            void execute();
     };
     
     

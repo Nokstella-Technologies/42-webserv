@@ -25,6 +25,8 @@
 
 namespace Config {
   
+    std::map<int, std::string> _parseErrorPages(std::string value) ;
+
     template <typename T>
     std::vector<T> _parseArray(std::string value);
      class Server {
@@ -40,7 +42,7 @@ namespace Config {
             bool autoindex;
             std::string redirection;
             int clientMaxBodySize;
-            void _parseErrorPages(std::string value);
+            
             
             
             
@@ -51,10 +53,12 @@ namespace Config {
             const std::map<int, std::string>& getErrorPages() const;
             const std::map<std::string, std::string>& getConfig() const;
             Routes * getLocations(std::string str);
+            std::string getErrorPage(int error_code);
             const std::vector<std::string>& getServerName() const;
             const std::vector<std::string>& getPort() const;
             const std::string& getRoot() const;
             const std::vector<std::string>& getIndex() const;
+            Config::Routes* FindLocation(std::string path);
         
             int getClientMaxBodySize() const;
             void setMimeType(std::map<std::string, std::string> *mimeTypes);

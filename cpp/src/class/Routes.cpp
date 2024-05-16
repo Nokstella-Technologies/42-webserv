@@ -1,4 +1,5 @@
 #include "Routes.hpp"
+#include "Server.hpp"
 #include "utils.hpp"
 
 Config::Routes::Routes(/* args */) : config()
@@ -30,8 +31,26 @@ bool Config::Routes::isUpload() {
     return true;
 }
 
+std::string Config::Routes::getRoot() {
+    return config.find("root") != config.end() ? utils::trim(config["root"], "\""): "";
+}
+
 bool Config::Routes::isRedirection() {
     return true;
+}
+
+void Config::Routes::parseConfig() {
+    for (std::map<std::string, std::string>::iterator it = config.begin(); it != config.end(); it++) {
+        if (it->first == ERRORLABEL) {
+            errorPages = _parseErrorPages(it->second);
+        } 
+    }
+}
+
+std::string Config::Routes::getErrorPage(int error_code) {
+    if (errorPages.find(error_code) == errorPages.end())
+        return "";
+    return errorPages[error_code];
 }
 
 std::ostream &operator<<(std::ostream &os, const Config::Routes &routes) {
