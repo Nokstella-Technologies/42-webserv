@@ -9,9 +9,9 @@ HEADER			=	-I src/header
 
 HEADER_TEST 	=	-I test/header
 
-CLASS			= 	Configuration.cpp  Server.cpp Routes.cpp SocketServer.cpp WebServer.cpp Request.cpp Response.cpp ResponseStatic.cpp ResponseError.cpp ResponseProxyPass.cpp
+CLASS			= 	Configuration.cpp  Server.cpp Routes.cpp SocketServer.cpp WebServer.cpp Request.cpp Response.cpp Cgi.cpp
  
-UTILS			= 	ends_with.cpp trim.cpp strtokS.cpp starts_with.cpp split.cpp isNumber.cpp
+UTILS			= 	ends_with.cpp trim.cpp strtokS.cpp starts_with.cpp split.cpp isNumber.cpp files.cpp
 
 SRC				=	main.cpp $(addprefix class/, $(CLASS)) $(addprefix utils/, $(UTILS))
 

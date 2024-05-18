@@ -146,17 +146,6 @@
             it->second->parseConfig();
         }
     }
-
-    bool Server::isRedirection() {
-        return config.find("proxy_pass") != config.end();
-    }
-
-
-    bool Server::isStatic() {
-        return true;
-    }
-
-
 void Server::setMimeType(std::map<std::string, std::string> *mimeTypes) {
     this->mimeTypes = mimeTypes;
 }

@@ -22,7 +22,6 @@
             void parseConfig();
             bool isCGI();
             bool isStatic();
-            bool isRedirection();
             bool isUpload();
 
            

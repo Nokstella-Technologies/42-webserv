@@ -19,6 +19,7 @@ void Routes::setConfig(std::string key, std::string value)
 {
     this->config[key] = value;
 }
+
 bool Routes::isCGI() {
     return config.find("cgi_path") != config.end() && config.find("cgi_extension") != config.end();
 }
@@ -33,10 +34,6 @@ bool Routes::isUpload() {
 
 std::string Routes::getConfig(std::string key) {
     return config.find(key) != config.end() ? utils::trim(config[key], "\""): "";
-}
-
-bool Routes::isRedirection() {
-    return config.find("proxy_pass") != config.end();
 }
 
 void Routes::parseConfig() {

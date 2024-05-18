@@ -68,43 +68,154 @@ void initialize_http_messages() {
     responseHttpMessages[511] = "Network Authentication Required";
 }
 
+Response::Response() : httpVersion("HTTP/1.1"), statusCode(200),server(NULL), route(NULL) {}
 
-    std::string read_file(const std::string &path)
-    {
-        std::ifstream _f; 
-        std::string file = "";
-        std::cout << path << std::endl;
-        _f.open(path.c_str());
-        if (!_f.is_open()) {
-            return "";
-        }
-        std::ostringstream os;
-        os << _f.rdbuf();
-        file = os.str();
-        return file;
-    }
+Response::~Response() {}
 
-    void Response::sendResponse(int fd)
-    {
-        int send_b = 0;
-        std::string finalResponse;
-        if (_status_code != -1) {
+void Response::setBody(std::string content) {
+	body = content;
+}
 
-            finalResponse = "HTTP/1.1 " + std::to_string(_status_code) + " " + responseHttpMessages[_status_code] +"\r\n";
-            for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
-            {
-                finalResponse += it->first + ":" + it->second + "\r\n";
+void Response::setHeader(std::string key, std::string value) {
+	header[key] = value;
+}
+
+void Response::renderErrorPage() {
+	std::stringstream ss;
+
+	ss << "<html>";
+	ss << "<head>";
+	ss << "<title>Document</title>";
+	ss << "</head>";
+	ss << "<style>";
+	ss << "html{font-size: 16px;}";
+	ss << "body{line-height: 1;height: 100vh;display: flex;flex-direction: column;justify-content: center;align-items: center;color:#E71D36;background-color: #0d1821;}";
+	ss << ".box{width: 600px;height: 600px;display: flex;flex-direction: column;justify-content: center;align-items: center;background-color: #fdfffc;border-radius: 16px;}";
+	ss << "h1{margin: 0;margin-bottom: 2rem;font-size: 7rem;}";
+	ss << "h2{margin: 0;font-size: 3.5rem;text-decoration: underline;}";
+	ss << "</style>";
+	ss << "<body>";
+	ss << "<div class='box'>";
+	ss << "<h1>" << statusCode << "</h1>";
+	ss << "<h2>" << responseHttpMessages[statusCode] << "</h2>";
+	ss << "</div>";
+	ss << "</body>";
+	ss << "</html>";
+
+	setBody(ss.str());
+}
+
+void Response::setStatusCode(int newStatusCode) {
+	statusCode = newStatusCode;
+
+	if (statusCode >= 400) {
+		setHeader("Connection", "close");
+        if (route != NULL) {
+			std::string f = route->getErrorPage(newStatusCode);
+            if (f != ""){
+				setBody(utils::getFile(route->getConfig("root") + "/" + f));
+                return;
             }
-            finalResponse += "\r\n";
-            finalResponse += _response;
-        } else {
-            finalResponse = _response;
         }
-        for (unsigned long i = 0; i < finalResponse.size(); i += send_b) {
-            send_b = send(fd, finalResponse.c_str() + i, finalResponse.size() - i, 0);
-            if (send_b < 0)
-                std::cerr << "Failed to send data to client" << strerror(errno) << std::endl;
-            else
-                std::cout << "Sent: " << send_b << std::endl;
+		if (server != NULL) {
+			std::string err = server->getErrorPage(newStatusCode); 
+            if (err != "" ) {
+                setBody(utils::getFile(server->getRoot() + "/" + err));
+                return;
+            }
         }
-    }
+		else
+			renderErrorPage();
+	}
+}
+
+int Response::getStatusCode() {
+	return statusCode;
+}
+
+void Response::setContentType(const std::string &fileExtenstion) {
+	if (fileExtenstion == "html")
+		setHeader("Content-Type", "text/html; charset=UTF-8");
+	else if (fileExtenstion == "css")
+		setHeader("Content-Type", "text/css; charset=UTF-8");
+	else if (fileExtenstion == "js")
+		setHeader("Content-Type", "text/javascript; charset=UTF-8");
+	else if (fileExtenstion == "jpg" || fileExtenstion == "jpeg")
+		setHeader("Content-Type", "image/jpeg");
+	else if (fileExtenstion == "png")
+		setHeader("Content-Type", "image/png");
+	else if (fileExtenstion == "ico")
+		setHeader("Content-Type", "image/x-icon");
+	else if (fileExtenstion == "txt")
+		setHeader("Content-Type", "text/plain");
+	else if (fileExtenstion == "json")
+		setHeader("Content-Type", "application/json");
+	else
+		setHeader("Content-Type", "application/octet-stream");
+}
+
+void Response::renderDirectory(std::string root, std::string path) {
+	DIR *dir;
+
+	struct dirent *ent;
+	struct stat fileStat;
+	std::string fullPath, modifiedTime;
+	std::stringstream ss;
+	if (path[path.size() - 1] != '/')
+		path += '/';
+	ss << "<html>"
+	   << "<head>"
+	   << "<title>Index of " << path << "</title>"
+	   << "</head>"
+	   << "<body class=\"container\">"
+	   << "<h1>Index of " << path << "</h1>"
+	   << "<table>"
+	   << "<tr><th>Name</th><th>Size</th><th>Date Modified</th></tr>";
+
+	std::string dirPath = root + path;
+	dir = opendir(dirPath.c_str());
+	while ((ent = readdir(dir)) != NULL) {
+		if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+			continue;
+		fullPath = dirPath + "/" + ent->d_name;
+		if (stat(fullPath.c_str(), &fileStat) == -1)
+			continue;
+		modifiedTime = ctime(&fileStat.st_mtime);
+		ss << "<tr>";
+		if (utils::isDirectory(fullPath)) {
+			ss << "<td><a href=\"" << path << ent->d_name << "\">" << ent->d_name
+			   << "/</a></td>";
+			ss << "<td>-</td>";
+		} else {
+			ss << "<td><a href=\"" << path << ent->d_name << "\">" << ent->d_name
+			   << "</a></td>";
+			ss << "<td>" << utils::formatSize(fileStat.st_size) << "</td>";
+		}
+		ss << "<td>" << modifiedTime;
+		ss << "</td></tr>";
+	}
+	closedir(dir);
+	ss << "</table>"
+	   << "</body>"
+	   << "</html>";
+
+	setBody(ss.str());
+}
+
+std::string Response::getMessage() {
+	std::stringstream message;
+
+	message << httpVersion << SP << statusCode << SP <<  responseHttpMessages[statusCode] << CRLF;
+
+	std::map<std::string, std::string>::iterator it;
+
+	for (it = header.begin(); it != header.end(); ++it)
+		message << it->first << ": " << it->second << CRLF;
+
+	message << CRLF;
+
+	if (this->body.size() > 0)
+		message << this->body;
+
+	return message.str();
+}

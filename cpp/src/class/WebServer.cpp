@@ -21,17 +21,15 @@ WebServer::WebServer()
 }
 
 
-void WebServer::_processReq(connection_t *conn, SocketServer *socket) {
-    Response *res;
-    res = conn->req.execute();
-    if (!res->execute()){
-        conn->req.errorCode = res->_status_code;
-        delete res;
-        return _processReq(conn, socket);
+void WebServer::_processReq(connection_t *conn) {
+    Response res;
+    conn->req.execute(&res);
+    std::string message = res.getMessage();
+	ssize_t bytesSend = write(conn->fd, message.c_str(), message.size());
+    if (bytesSend <= 0){
+        conn->type = "error";
     }
-    res->sendResponse(conn->fd);
     close(conn->fd);
-    delete res;
     delete conn;
 }
 
@@ -133,7 +131,7 @@ void WebServer::_eppollWait() {
             continue;
             }
             if (_events[i].filter == EVFILT_WRITE) {
-                _processReq(connection, server);
+                _processReq(connection);
             }
         }
     }

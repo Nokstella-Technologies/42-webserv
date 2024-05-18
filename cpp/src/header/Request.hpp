@@ -1,15 +1,28 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <algorithm>
+#include <vector>
+#include <string>
+#include <cstring>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+
 #include "Exceptions.hpp"
+#include "Cgi.hpp"
 #include "utils.hpp"
 #include "Server.hpp"
 #include "Routes.hpp"
-#include <string>
-#include <sys/socket.h>
-#include <iostream>
-#include <sys/types.h>
 #include "Response.hpp"
-#include "algorithm"
 
 
 
@@ -43,8 +56,10 @@
         public:
         std::string     req;
         int         errorCode;
+        std::string     fileCgi;
         
         Request();
+        std::string getConfig(std::string conf);
         Request(std::string body, std::string host, std::string path, Methods method);
         std::string getBody() const { return body; }
         std::string getHost() const { return host; }
@@ -58,7 +73,10 @@
         void setRoute(Routes *route) { this->route = route; }
         Routes *getRoute() const { return route; }
         bool parseBody(std::string body);
-        Response *execute();
+        void execute(Response *response);
+        void handleMultipart();
+        bool isValidCgiRequest();
+        bool isMultiPart();
         void read_request(int fd);
         bool parser();
 

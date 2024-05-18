@@ -45,7 +45,7 @@ class WebServer
         #else 
             struct epoll_event _events[MAX_EVENTS];
         #endif
-        void _processReq(connection_t *conn, SocketServer *socket); 
+        void _processReq(connection_t *conn);
 
     public:
         WebServer();
