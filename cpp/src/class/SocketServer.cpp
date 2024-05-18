@@ -94,7 +94,7 @@
 
     void SocketServer::listenSocket()
     {
-        if (listen(listen_fd, MAX_CANON) < 0)
+        if (listen(listen_fd, 5) < 0)
         {
             throw Excp::SocketListen("-1");
         }
@@ -138,9 +138,9 @@
             if (kevent(epoll_fd, _ev, 1, NULL, 0, NULL) == -1)
                 throw Excp::EpollCreation("Failed to add socket to epoll set");
         #else
-            event.events = EPOLLIN | EPOLLOUT;
-            event.data.fd = fd
-            event.data.ptr = connections;
+            _ev->events = EPOLLIN | EPOLLOUT;
+            _ev->data.fd = this->listen_fd;
+            _ev->data.ptr = _connections;
             if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_fd , _ev) == -1)
                 throw Excp::EpollCreation("Failed to add socket to epoll set");
         #endif
