@@ -75,6 +75,7 @@
         bool parseBody(std::string body);
         void execute(Response *response);
         void handleMultipart();
+        
         bool isValidCgiRequest();
         bool isMultiPart();
         void read_request(int fd);
