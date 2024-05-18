@@ -1,45 +1,45 @@
 #include "Routes.hpp"
-#include "Server.hpp"
-#include "utils.hpp"
 
-Config::Routes::Routes(/* args */) : config()
+
+
+Routes::Routes(/* args */) : config()
 {
 }
 
-Config::Routes::~Routes()
+Routes::~Routes()
 {
 }
 
-const std::map<std::string, std::string>& Config::Routes::getConfig() const
+const std::map<std::string, std::string>& Routes::getConfig() const
 {
     return this->config;
 }
 
-void Config::Routes::setConfig(std::string key, std::string value)
+void Routes::setConfig(std::string key, std::string value)
 {
     this->config[key] = value;
 }
-bool Config::Routes::isCGI() {
-    return true;
+bool Routes::isCGI() {
+    return config.find("cgi_path") != config.end() && config.find("cgi_extension") != config.end();
 }
 
-bool Config::Routes::isStatic() {
-    return true;
+bool Routes::isStatic() {
+    return config.find("root") != config.end() || config.find("index") != config.end() || config.find("autoindex") != config.end();
 }
 
-bool Config::Routes::isUpload() {
-    return true;
+bool Routes::isUpload() {
+    return config.find("upload_directory") != config.end();
 }
 
-std::string Config::Routes::getRoot() {
-    return config.find("root") != config.end() ? utils::trim(config["root"], "\""): "";
+std::string Routes::getConfig(std::string key) {
+    return config.find(key) != config.end() ? utils::trim(config[key], "\""): "";
 }
 
-bool Config::Routes::isRedirection() {
-    return true;
+bool Routes::isRedirection() {
+    return config.find("proxy_pass") != config.end();
 }
 
-void Config::Routes::parseConfig() {
+void Routes::parseConfig() {
     for (std::map<std::string, std::string>::iterator it = config.begin(); it != config.end(); it++) {
         if (it->first == ERRORLABEL) {
             errorPages = _parseErrorPages(it->second);
@@ -47,13 +47,13 @@ void Config::Routes::parseConfig() {
     }
 }
 
-std::string Config::Routes::getErrorPage(int error_code) {
+std::string Routes::getErrorPage(int error_code) {
     if (errorPages.find(error_code) == errorPages.end())
         return "";
     return errorPages[error_code];
 }
 
-std::ostream &operator<<(std::ostream &os, const Config::Routes &routes) {
+std::ostream &operator<<(std::ostream &os, const Routes &routes) {
     os << "Routes: " << std::endl;
     utils::printMap(os, routes.getConfig());
     return os;

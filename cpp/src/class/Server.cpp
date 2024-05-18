@@ -1,5 +1,4 @@
 #include "Server.hpp"
-namespace Config {
 
     template <>
     std::vector<int> _parseArray<int>(std::string value) {
@@ -74,7 +73,7 @@ namespace Config {
         return index;
     }
 
-    int Server::getClientMaxBodySize() const{
+    long int Server::getClientMaxBodySize() const{
         return clientMaxBodySize;
     }
 
@@ -82,7 +81,7 @@ namespace Config {
         config[key] = value;
     }
 
-    Config::Routes* Server::FindLocation(std::string path) {
+    Routes* Server::FindLocation(std::string path) {
         for (std::map<std::string, Routes *>::iterator it = locations.begin(); it != locations.end(); it++) {
             if (utils::starts_with(path, it->first)) {
                 return it->second;
@@ -91,9 +90,16 @@ namespace Config {
         return NULL;
     }
 
-    Config::Routes* Server::getLocations(std::string str){
-        if (locations.find(str) == locations.end()) {
-            return NULL;
+
+    std::string Server::getConfig(std::string key) {
+        return config.find(key) != config.end() ? utils::trim(config[key], "\""): "";
+    }
+
+    Routes* Server::getLocations(std::string str){
+        for (std::map<std::string, Routes *>::iterator it = locations.begin(); it != locations.end(); it++) {
+            if (utils::starts_with(it->first, str) ){
+                return it->second;
+            }
         }
         return locations[str];
     }
@@ -105,7 +111,7 @@ namespace Config {
         locations[location]->setConfig(key, value);
     }
 
-    std::string Config::Server::getErrorPage(int error_code) {
+    std::string Server::getErrorPage(int error_code) {
     if (errorPages.find(error_code) == errorPages.end())
         return "";
     return errorPages[error_code];
@@ -141,23 +147,25 @@ namespace Config {
         }
     }
 
-    
+    bool Server::isRedirection() {
+        return config.find("proxy_pass") != config.end();
+    }
 
-      bool Server::isStatic() {
+
+    bool Server::isStatic() {
         return true;
-      }
+    }
 
-} 
 
-void Config::Server::setMimeType(std::map<std::string, std::string> *mimeTypes) {
+void Server::setMimeType(std::map<std::string, std::string> *mimeTypes) {
     this->mimeTypes = mimeTypes;
 }
 
-std::string Config::Server::getMimeType(std::string key) {
+std::string Server::getMimeType(std::string key) {
     return (*mimeTypes)[key];
 }
 
-std::ostream &operator<<(std::ostream &os, const Config::Server &server) {
+std::ostream &operator<<(std::ostream &os, const Server &server) {
     os << "++++++++++ NOVO SERVER +++++++++++++++" << std::endl;
     os << "+++ Config +++" << std::endl;
     utils::printMap(os, server.getConfig());
@@ -174,7 +182,7 @@ std::ostream &operator<<(std::ostream &os, const Config::Server &server) {
     os << "+++ CLIENT MAX BODY SIZE +++" << std::endl;
     os << server.getClientMaxBodySize() << std::endl;
     os << "+++ LOCATIONS +++" << std::endl;
-    // for (std::map<std::string, Config::Routes *>::const_iterator it = server.begin(); it != server.getLocations().end(); it++) {
+    // for (std::map<std::string, Routes *>::const_iterator it = server.begin(); it != server.getLocations().end(); it++) {
     //     os << "Location: " << it->first << std::endl << *(it->second) << std::endl;
     // }
     return os;

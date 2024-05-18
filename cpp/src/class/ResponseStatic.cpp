@@ -13,9 +13,7 @@
 
 // CASO 3: se acabar sem / e for um diretorio e tiver o autoindex ligado, listar os arquivos do diretorio
 // TRATAR O CASO DE NAO EXISTIR O ARQUIVO, COM OS ERROS DA CONFIG
-namespace WebServer
-{
-    ResponseStatic::ResponseStatic( Config::Server *server, Config::Routes *routes, std::string path, std::string route){
+    ResponseStatic::ResponseStatic( Server *server, Routes *routes, std::string path, std::string route){
         _server = server;
         _routes = routes;
         _path = path;
@@ -35,7 +33,7 @@ namespace WebServer
         _file = _root + _path;
     }
 
-    void ResponseStatic::execute()
+    bool ResponseStatic::execute()
     {
         createPath();
         std::ifstream _f; 
@@ -43,7 +41,8 @@ namespace WebServer
         std::cout << _file << std::endl;
         _f.open(_file.c_str());
         if (!_f.is_open()) {
-            throw Excp::ErrorRequest("File not found", 404);
+            _status_code = 404;
+            return false;
         }
         std::ostringstream os;
         os << _f.rdbuf();
@@ -53,6 +52,7 @@ namespace WebServer
         _response += std::to_string(file.size());
         _response += "\n\n";
         _response += file; 
+        return true;
     }
     
-} // namespace WebServer
+

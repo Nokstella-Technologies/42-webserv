@@ -1,7 +1,6 @@
 #include "SocketServer.hpp"
 
-namespace Config
-{
+
 
     static bool verifyIpNumber(std::string ip) {
         std::vector<std::string> ips = utils::split(ip, ".");
@@ -43,7 +42,7 @@ namespace Config
         this->listenSocket();
     }
 
-     SocketServer::SocketServer(std::string ip) : servers(), listen_fd(0), server_addr(), _ev(new poll_event){
+     SocketServer::SocketServer(std::string ip) : servers(), listen_fd(0), server_addr(), _ev(new poll_event), _connections(new connection_t){
         std::vector<std::string> ips = utils::split(ip, ":");
         port = atoi(ips[1].c_str());
         ipV4 = ips[0];
@@ -64,6 +63,7 @@ namespace Config
     SocketServer::~SocketServer()
     {
         delete _ev;
+        delete _connections;
     }
 
     void SocketServer::createSocket()
@@ -94,7 +94,7 @@ namespace Config
 
     void SocketServer::listenSocket()
     {
-        if (listen(listen_fd, SOMAXCONN) < 0)
+        if (listen(listen_fd, MAX_CANON) < 0)
         {
             throw Excp::SocketListen("-1");
         }
@@ -119,8 +119,10 @@ namespace Config
     poll_event *SocketServer::getEv() const {
         return _ev;
     }
+
     void SocketServer::setEv(uint32_t event, int fd) {
         #ifdef __APPLE__
+            
             EV_SET(_ev, fd, event, EV_ADD, 0, 0, NULL);
         #else
             _ev->events = event;
@@ -129,28 +131,17 @@ namespace Config
     }
 
     void SocketServer::addEpollFd(int epoll_fd) {
+        _connections->type = "new connection";
+        _connections->ptr = this;
         #ifdef __APPLE__
-            setEv(EVFILT_READ, listen_fd);
+            EV_SET(_ev, this->listen_fd, EVFILT_READ | EVFILT_WRITE, EV_ADD, 0, 0, _connections);
             if (kevent(epoll_fd, _ev, 1, NULL, 0, NULL) == -1)
                 throw Excp::EpollCreation("Failed to add socket to epoll set");
         #else
-            setEv(EPOLLIN, listen_fd);
+            event.events = EPOLLIN | EPOLLOUT;
+            event.data.fd = fd
+            event.data.ptr = connections;
             if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_fd , _ev) == -1)
                 throw Excp::EpollCreation("Failed to add socket to epoll set");
         #endif
     }
-
-
-    int SocketServer::resolveHostName() 
-    {
-        // struct addrinfo *res;
-        // for (std::map<int, Config::Server *>::iterator it = socketServer->servers; it != socketServer->servers.end(); it++) {
-        //     int result = getaddrinfo(it->first.c_str(), NULL, NULL, &res);
-        //     std::cout << "Result: " << result->ai_canonname << std::endl;
-        //     if (result == 0) {
-        //         freeaddrinfo(res);
-        //     }
-        // }
-        return 1;
-    }
-} // namespace Config

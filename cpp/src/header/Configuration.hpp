@@ -6,10 +6,10 @@
 #include <fstream>
 #include <vector>
 #include "utils.hpp"
-#include "Server.hpp"
 #include "Exceptions.hpp"
-#include "SocketServer.hpp"
+#include "Server.hpp"
 #include "WebServer.hpp"
+
 
 namespace Config
 {
@@ -28,7 +28,7 @@ namespace Config
         Configuration();
         ~Configuration();
         void loadFile(std::string filename) throw(Excp::FileNotOpen, Excp::WrongFile, Excp::BadLabel);
-        WebServer::WebServer *createSockets();
+        WebServer *createSockets();
         void loadMimeTypes(std::string filename) throw(Excp::FileNotOpen, Excp::WrongFile);
         const std::vector<Server *>& getConfig() const ;
     };

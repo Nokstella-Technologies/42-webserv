@@ -1,10 +1,4 @@
-#include <iostream>
-#include <fstream>
-#include <cstdio>
-#include <Configuration.hpp>
-#include <SocketServer.hpp>
-#include <WebServer.hpp>
-#include "Response.hpp"
+#include "Configuration.hpp"
 #define MAX_EVENTS 10
 
 
@@ -12,7 +6,7 @@
 int main(int argc, char *argv[])
 {
 	Config::Configuration config;
-	WebServer::WebServer *webserver = NULL;
+	WebServer *webserver = NULL;
 
 	std::string path = "./configuration/server.toml";
 	std::string mimeType = "./configuration/mimeType.toml";

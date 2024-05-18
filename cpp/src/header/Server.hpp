@@ -23,7 +23,8 @@
 #define REDIRLB "redirection"
 
 
-namespace Config {
+    class Routes;
+
   
     std::map<int, std::string> _parseErrorPages(std::string value) ;
 
@@ -41,7 +42,7 @@ namespace Config {
             std::string root;
             bool autoindex;
             std::string redirection;
-            int clientMaxBodySize;
+            long int clientMaxBodySize;
             
             
             
@@ -57,10 +58,12 @@ namespace Config {
             const std::vector<std::string>& getServerName() const;
             const std::vector<std::string>& getPort() const;
             const std::string& getRoot() const;
+            std::string getConfig(std::string key);
+            bool isRedirection();
             const std::vector<std::string>& getIndex() const;
-            Config::Routes* FindLocation(std::string path);
+            Routes* FindLocation(std::string path);
         
-            int getClientMaxBodySize() const;
+            long int getClientMaxBodySize() const;
             void setMimeType(std::map<std::string, std::string> *mimeTypes);
             std::string getMimeType(std::string key);
             void setErrorPages(int code, std::string path);
@@ -70,7 +73,6 @@ namespace Config {
             bool isStatic();
 
     };
-};
-    std::ostream &operator<<(std::ostream &os, const Config::Server &server);
+    std::ostream &operator<<(std::ostream &os, const Server &server);
 
 #endif

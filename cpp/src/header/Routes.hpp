@@ -2,9 +2,10 @@
 #define ROUTES_HPP
 
 #include <map>
+#include "utils.hpp"
+#include "Server.hpp"
 #include <iostream>
 
-namespace Config {
     class Routes
     {
         private:
@@ -17,7 +18,7 @@ namespace Config {
             const std::map<std::string, std::string> & getConfig() const;
             void setConfig(std::string key, std::string value);
             std::string getErrorPage(int error_code);
-            std::string getRoot();
+            std::string getConfig(std::string config);
             void parseConfig();
             bool isCGI();
             bool isStatic();
@@ -26,9 +27,8 @@ namespace Config {
 
            
     };
-};
 
-std::ostream &operator<<(std::ostream &os, const Config::Routes &routes);
+std::ostream &operator<<(std::ostream &os, const Routes &routes);
 
 
 

@@ -2,10 +2,11 @@
 
 # General server settings
 [[server]]
-listen = 8080                                  
-server_name = "localhost"
+listen = "8081"
+server_name = ["localhost", "youtube.com"]
 client_max_body_size = "10M"
 root = "./server/localhost"
+proxy_pass = "google.com"
 # Default error pages
 [server.error_pages]
 404 = "custom_404.html"
@@ -25,13 +26,17 @@ allow_methods = ["POST"]
 upload_directory = "/path/to/uploads"
 
 [server.routes."/cgi-bin"]
-
 allow_methods = ["GET", "POST"]
-cgi_extension = ".cgi"
+cgi_path = "/bin/sh"
+cgi_extension = ".sh"
 
 [server.routes."/error"]
 root = "./server/localhost"
 error_pages = {404 = "custom_404.html"}
+
+[server.routes."/api/v1"]
+proxy_pass = "google.com.br"
+
 
 [[server]]
 listen = 8001

@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <netdb.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -13,32 +15,28 @@
 #include "utils.hpp"
 #include "Server.hpp"
 #include "Routes.hpp"
-
+#define CRLF "\r\n"
 #define ERRORDEFAULTURL "https://http.cat/status/"
 extern void initialize_http_messages() ;
 extern std::map<int, std::string> responseHttpMessages;
 
 
-
-namespace WebServer
-{   
     std::string read_file(const std::string &path);
     class Response
     {
         protected:
             std::map<std::string, std::string>  _headers;
             std::string                         _response;
-            Config::Server                      *_server;
-            Config::Routes                      *_routes;
-            int                                  _status_code;
+            Server                      *_server;
+            Routes                      *_routes;
             
 
         public:
-            virtual void execute() = 0;
+            int                                  _status_code;
+            virtual bool execute() = 0;
             virtual ~Response() {};
             std::string getResponse() const { return _response; }
             void sendResponse(int fd);
-            std::string getMimetype(std::string path);
     };
 
     class ResponseStatic : public Response
@@ -54,19 +52,20 @@ namespace WebServer
 
         public:
             ~ResponseStatic() {};
-            explicit ResponseStatic( Config::Server *server, Config::Routes *routes, std::string path, std::string root);
+            explicit ResponseStatic( Server *server, Routes *routes, std::string path, std::string root);
             void createPath();
-            void execute();
+            bool execute();
     };
 
     class ResponseError : public Response
     {
         private:
             int _error_code;
+            void _setLocatoin();
         public:
             ~ResponseError() {};
-            explicit ResponseError(Config::Server *server, Config::Routes *routes, int error_code);
-            void execute();
+            explicit ResponseError(Server *server, Routes *routes, int error_code);
+            bool execute();
 
     };
 
@@ -76,12 +75,13 @@ namespace WebServer
             std::string _request;
         public:
             ~ResponseProxyPass() {};
-            explicit ResponseProxyPass(Config::Server *server, Config::Routes *routes, std::string _req);
-            void execute();
+            explicit ResponseProxyPass(Server *server, Routes *routes, std::string _req);
+            std::string getProxy();
+            bool execute();
     };
     
     
-} // namespace WebServer
+
 
 
 #endif

@@ -68,8 +68,6 @@ void initialize_http_messages() {
     responseHttpMessages[511] = "Network Authentication Required";
 }
 
-namespace WebServer
-{
 
     std::string read_file(const std::string &path)
     {
@@ -78,7 +76,7 @@ namespace WebServer
         std::cout << path << std::endl;
         _f.open(path.c_str());
         if (!_f.is_open()) {
-            throw Excp::ErrorRequest("File not found", 404);
+            return "";
         }
         std::ostringstream os;
         os << _f.rdbuf();
@@ -89,13 +87,19 @@ namespace WebServer
     void Response::sendResponse(int fd)
     {
         int send_b = 0;
-        std::string finalResponse = "HTTP/1.1 " + std::to_string(_status_code) + " " + responseHttpMessages[_status_code] +"\r\n";
-        for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
-        {
-            finalResponse += it->first + ":" + it->second + "\r\n";
+        std::string finalResponse;
+        if (_status_code != -1) {
+
+            finalResponse = "HTTP/1.1 " + std::to_string(_status_code) + " " + responseHttpMessages[_status_code] +"\r\n";
+            for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
+            {
+                finalResponse += it->first + ":" + it->second + "\r\n";
+            }
+            finalResponse += "\r\n";
+            finalResponse += _response;
+        } else {
+            finalResponse = _response;
         }
-        finalResponse += "\r\n";
-        finalResponse += _response;
         for (unsigned long i = 0; i < finalResponse.size(); i += send_b) {
             send_b = send(fd, finalResponse.c_str() + i, finalResponse.size() - i, 0);
             if (send_b < 0)
@@ -104,5 +108,3 @@ namespace WebServer
                 std::cout << "Sent: " << send_b << std::endl;
         }
     }
-
-} // namespace WebServer

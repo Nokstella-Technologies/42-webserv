@@ -13,11 +13,11 @@ Config::Configuration::~Configuration()
     _config.clear();
 }
 
-const std::vector<Config::Server *> & Config::Configuration::getConfig() const {
+const std::vector<Server *> & Config::Configuration::getConfig() const {
     return _config;
 }
 
-void Config::Configuration::_populateServer(Config::Server *server, std::string line) {
+void Config::Configuration::_populateServer(Server *server, std::string line) {
     if (utils::starts_with(line, "[")) {
         line = utils::trim(utils::trim(line, "[]"));
         if (line ==  std::string(SLABEL) + "." + std::string(ERRORLABEL)) {
@@ -82,7 +82,7 @@ void Config::Configuration::loadFile(std::string filename) throw(Excp::FileNotOp
 {
     std::ifstream config_file(filename.c_str());
     std::string line;
-    Config::Server *server = NULL;
+    Server *server = NULL;
 
     if (!utils::ends_with(filename, ".toml"))
         throw Excp::WrongFile(filename);
@@ -106,7 +106,7 @@ void Config::Configuration::loadFile(std::string filename) throw(Excp::FileNotOp
                     isLocation = false;
                     location = "";
                 }
-                server = new Config::Server();
+                server = new Server();
             }
             else
                 throw Excp::BadLabel(line);
@@ -121,9 +121,9 @@ void Config::Configuration::loadFile(std::string filename) throw(Excp::FileNotOp
     }
 }
 
-WebServer::WebServer *Config::Configuration::createSockets(){
-    WebServer::WebServer *webServer = new WebServer::WebServer();
-     for (std::vector<Config::Server *>::const_iterator server = _config.begin(); server != _config.end(); server++) {
+WebServer *Config::Configuration::createSockets(){
+    WebServer *webServer = new WebServer();
+     for (std::vector<Server *>::const_iterator server = _config.begin(); server != _config.end(); server++) {
         std::vector<std::string> port = (*server)->getPort();
         for (std::vector<std::string>::iterator ipPort = port.begin(); ipPort != port.end(); ipPort++) {
             webServer->addServerToSocket(SocketServer::getFullIp(*ipPort), *server);
@@ -133,7 +133,7 @@ WebServer::WebServer *Config::Configuration::createSockets(){
 }
 
 std::ostream &operator<<(std::ostream &os, const Config::Configuration &config) {
-    for (std::vector<Config::Server *>::const_iterator it = config.getConfig().begin(); it != config.getConfig().end(); it++) {
+    for (std::vector<Server *>::const_iterator it = config.getConfig().begin(); it != config.getConfig().end(); it++) {
         os << **it;
     }
     return os;
