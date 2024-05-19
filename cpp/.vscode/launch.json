@@ -14,7 +14,7 @@
             "cwd": "${workspaceRoot}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb",
+            "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb", // Adicione esta linha com o caminho correto
             "setupCommands": [
                 {

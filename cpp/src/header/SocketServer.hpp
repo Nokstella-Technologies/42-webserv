@@ -15,14 +15,15 @@
     # include <sys/epoll.h>
 #endif
 
+#include "Connection.hpp"
+#include "WebServer.hpp"
+#include "Server.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <map>
 #include <vector>
-#include "Connection.hpp"
-
     class SocketServer
     {
     private:
@@ -50,6 +51,7 @@
         void setEv(uint32_t event, int fd);
         void addEpollFd(int epoll_fd);
         static std::string getFullIp(std::string ip);
+        void parser(Request *req);
         
     };
 

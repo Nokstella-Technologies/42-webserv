@@ -16,16 +16,15 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-
+#include "Response.hpp"
 #include "Exceptions.hpp"
 #include "Cgi.hpp"
 #include "utils.hpp"
 #include "Server.hpp"
 #include "Routes.hpp"
-#include "Response.hpp"
 
 
-
+class SocketServer;
 #define HOST "Host"
 #define CONTENT_LENGTH "Content-Length"
 #define CONTENT_TYPE "Content-Type"
@@ -41,6 +40,9 @@
     Methods getMethodE(std::string method);
     class Request {
         private:
+        
+        
+        public:
         std::string     body;
         std::string     host;
         std::string     path;
@@ -51,14 +53,16 @@
         std::map<std::string, std::string> headers;
         Server  *server;
         Routes  *route;
-        
-        bool            parseRequsetLine(std::string line);
-        public:
         std::string     req;
         int         errorCode;
         std::string     fileCgi;
-        
+        bool isHeadearsParser;
+        bool isHttpparser ;
+        bool isBodyParser;
+       
+        bool            parseRequsetLine(std::string line);
         Request();
+        bool isParsed();
         std::string getConfig(std::string conf);
         Request(std::string body, std::string host, std::string path, Methods method);
         std::string getBody() const { return body; }
@@ -72,14 +76,14 @@
         Server *getServer() const { return server; }
         void setRoute(Routes *route) { this->route = route; }
         Routes *getRoute() const { return route; }
-        bool parseBody(std::string body);
+        void parseBody();
         void execute(Response *response);
         void handleMultipart();
         
         bool isValidCgiRequest();
         bool isMultiPart();
-        void read_request(int fd);
-        bool parser();
+        bool read_request(int fd);
+       
 
 
     };

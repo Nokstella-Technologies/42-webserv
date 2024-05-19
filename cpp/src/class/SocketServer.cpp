@@ -144,4 +144,73 @@
             if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_fd , _ev) == -1)
                 throw Excp::EpollCreation("Failed to add socket to epoll set");
         #endif
+}
+
+
+void SocketServer::parser(Request *req) {
+    std::string data = req->req;
+    size_t pos = data.find(CRLF);
+
+    if (data.empty()) {
+        req->errorCode = 400;
+        return;
     }
+	// http line
+	if (!req->isHttpparser) {
+		pos = data.find(CRLF);
+		if (pos == std::string::npos)
+			return ;
+		std::string requestLine = data.substr(0, pos);
+		req->isHttpparser = req->parseRequsetLine(requestLine);
+		req->req = req->req.substr(pos + 2);
+		if (!req->isHttpparser)
+			return ;
+	}
+	// headers
+	if (!req->isHeadearsParser) {
+		pos = req->req.find(CRLF CRLF);
+		if (pos == std::string::npos) {
+			req->errorCode = 400;
+			return ;
+		}
+		std::string headersContent = req->req.substr(0, pos);
+		std::vector<std::string> _headers = utils::split(headersContent, "\n");
+		for (std::vector<std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
+			std::string line = *it;
+			if (line.find(":") == std::string::npos) {
+				req->errorCode = 400;
+				return; 
+			}
+			if (utils::starts_with(line, HOST)) {
+				req->host = utils::trim(line.substr(line.find(":") + 1));
+				req->host = req->host.substr(0, req->host.find(":"));
+			} else if (utils::starts_with(line, CONTENT_LENGTH)) {
+				std::string number = utils::trim(line.substr(line.find(":") + 1));
+				if (!utils::isNumber(number)) {
+					req->errorCode = 400;
+					return ;
+				}
+				req->body_length = atoi(number.c_str());
+			} 
+            std::string key = utils::trim(line.substr(0, line.find(":")));
+			std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+			req->headers[key] = utils::trim(line.substr(line.find(":") + 1));
+		}
+		req->isHeadearsParser = true;
+		req->server = getServer(req->getHost());
+        req->route = req->server->getLocations(req->getPath());
+		if (std::find(req->server->getServerName().begin(), req->server->getServerName().end(), req->host) == req->server->getServerName().end()) {
+			 req->errorCode = 400;
+			return;
+		}
+		req->req = req->req.substr(pos + 4);
+		if (!req->isHeadearsParser)
+			return;
+	}
+	if (!req->isBodyParser) {
+		req->parseBody();
+		if (!req->isBodyParser)
+			return;
+	}
+    return; 
+}

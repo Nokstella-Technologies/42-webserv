@@ -130,6 +130,9 @@ void WebServer::_eppollWait() {
             }
             if (_events[i].filter == EVFILT_WRITE) {
                 _processReq(connection);
+                close(connection->fd);
+				delete connection;
+				continue;
             }
         }
     }
@@ -197,11 +200,8 @@ void WebServer::_eppollWait() {
                     delete connection;
                     continue;
                 }
-                bool parsed = connection->req.parser();
-                Server *serverR = server->getServer(connection->req.getHost());
-                Routes *route = serverR->getLocations(connection->req.getPath());
-                parsed = connection->req.verifyheaders(serverR, route);
-                if (parsed || connection->req.errorCode != 0) {
+                server->parser(&connection->req);
+                if(connection->req.isParsed() ) {
                     connection->type = "response";
 					struct epoll_event event;
 					event.events = EPOLLOUT;

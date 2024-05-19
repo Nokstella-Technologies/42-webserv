@@ -1,11 +1,10 @@
 #ifndef WEBSERVER_HPP
 #define WEBSERVER_HPP
 
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1000
 
 
 #include <csignal>
-#include <Response.hpp>
 #include <cstdio>
 #include <map>
 #include <iostream>
@@ -15,12 +14,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "Response.hpp"
 #include "Connection.hpp"
-
 #include "SocketServer.hpp"
-#include "Request.hpp"
 #include "Server.hpp"
-
 
 
 class SocketServer;

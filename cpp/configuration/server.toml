@@ -12,7 +12,7 @@ root = "html"
 [server.routes."/"]
 allow_methods = ["GET", "POST"]
 index = "index.html"
-upload_path = "/uploads"
+upload_directory = "/uploads"
 
 [server.routes."/pages/calculator"]
 allow_methods = ["GET"]
@@ -24,8 +24,13 @@ index = "bitcoin.html"
 
 [server.routes."/pages/upload"]
 allow_methods = ["POST", "GET"]
-upload_path = "/uploads"
+upload_directory = "/uploads"
 index = "upload.html"
+
+[server.routes."/uploads"]
+allow_methods = ["GET", "POST", "DELETE"]
+auto_index = "on"
+index = "posts.html"
 
 [server.routes."/42"]
 allow_methods = ["GET"]
@@ -38,7 +43,7 @@ cgi_pass = ".py"
 
 [server.routes."/cgi/get"] 
 allow_methods = ["GET"]
-cgi = "sum.py"
+cgi = "bitcoin_value.py"
 cgi_pass = ".py"
 
 # First server for a host:port becomes the default

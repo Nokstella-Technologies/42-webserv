@@ -1,5 +1,4 @@
 #include "Configuration.hpp"
-#define MAX_EVENTS 10
 
 
 

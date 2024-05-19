@@ -1,8 +1,8 @@
 #include "Request.hpp"
 
 
-Request::Request():  body(""), host(""), path(""), method(GET), body_length(-1) ,content_type(""), strRoute(""), server(NULL), route(NULL),  req(""), errorCode(0), fileCgi(""){}
-Request::Request(std::string body, std::string host, std::string path, Methods method): body(body), host(host), path(path), method(method), body_length(body.length()) ,content_type("") , strRoute(""), server(NULL), route(NULL), req(""), errorCode(0), fileCgi(""){}
+Request::Request():  body(""), host(""), path(""), method(GET), body_length(-1) ,content_type(""), strRoute(""), server(NULL), route(NULL),  req(""), errorCode(0), fileCgi(""),  isHeadearsParser(false), isHttpparser(false), isBodyParser(false){}
+Request::Request(std::string body, std::string host, std::string path, Methods method): body(body), host(host), path(path), method(method), body_length(body.length()) ,content_type("") , strRoute(""), server(NULL), route(NULL), req(""), errorCode(0), fileCgi(""),  isHeadearsParser(false), isHttpparser(false), isBodyParser(false){}
 
 Methods getMethodE(std::string method) {
     if (method == "GET")
@@ -15,26 +15,20 @@ Methods getMethodE(std::string method) {
         return UNKNOWN;
 }
 
-void Request::read_request(int fd_request) {
-    char buffer[1024];
-    int bytes_received = 1024;
-
-    while (bytes_received > 0 && bytes_received == 1024) {
-        std::cout << "Receiving ... "  << std::endl;
-        memset(buffer, 0, sizeof(buffer));
-        bytes_received = read(fd_request, buffer, sizeof(buffer) - 1);
-        std::cout << "Received: " << bytes_received << std::endl;
-        if (bytes_received == -1) {
-            close(fd_request);
-            return ;
-        }
-        else if (bytes_received == 0)
-            break;
-        else 
-            req.append(buffer, bytes_received);
-        buffer[bytes_received] = '\0';
-    }
+bool Request::read_request(int fd_request) {
+	char buffer[2048];
+	bzero(buffer, sizeof(char) * 2048);
+	ssize_t bytesRead = read(fd_request, buffer, sizeof(buffer) - 1);
+	std::cout << "Bytes read: " << bytesRead << std::endl;
+	if (bytesRead <= 0) {
+		close(fd_request);
+		return false;
+	}
+	buffer[bytesRead] = 0;
+	req += std::string(buffer, bytesRead);
+	return true;
 }
+
 bool Request::parseRequsetLine(std::string line) {
     std::vector<std::string> requestLineTokens = utils::split(line, " ");
 	if (requestLineTokens.size() != 3) {
@@ -51,56 +45,10 @@ bool Request::parseRequsetLine(std::string line) {
 	}
 	return true;
 }
-
-bool Request::parser() {
-
-    bool isBody = false;
-    bool isHeadears = false;
-    bool status = true;
-    if (req.empty()) {
-        errorCode = 400;
-        return false;
-    }
-    std::vector<std::string> lines = utils::split(req, "\n");
-    std::string tmpbody;
-    for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++) {
-        std::string line = *it;
-        if (it == lines.begin()) {
-            status = parseRequsetLine(line);
-            isHeadears = true;
-        }
-        else if (!isBody && isHeadears && (line == "\r" || line == "\r\n" || line == "\n")){
-            tmpbody += line;
-            isBody = true;
-            isHeadears = false;
-        }  else if (isHeadears && !isBody) {
-            if (line.find(":") == std::string::npos) {
-               errorCode = 400;
-               status = false;
-            }
-            if (utils::starts_with(line, HOST)) {
-                host = utils::trim(line.substr(line.find(":") + 1));
-                host = host.substr(0, host.find(":"));
-            } else if (utils::starts_with(line, CONTENT_LENGTH)) {
-                std::string number = utils::trim(line.substr(line.find(":") + 1));
-                if (utils::isNumber(number)) {
-                    errorCode = 400;
-                    status = false;
-                }
-                body_length = atoi(number.c_str());
-            } else {
-				std::transform(line.begin(), line.end(), line.begin(), ::tolower);
-                headers[utils::trim(line.substr(0, line.find(":")))] = utils::trim(line.substr(line.find(":") + 1));
-            }
-        } else if (isBody && !isHeadears ) {
-            tmpbody += line;
-        } else {
-            errorCode = 400;
-            status = false;
-        }
-    }
-    return status && parseBody(tmpbody);
-
+bool Request::isParsed() {
+	if (errorCode != 0)
+		return true;
+	return isHeadearsParser && isHttpparser && isBodyParser;
 }
 
 
@@ -122,65 +70,56 @@ std::ostream &operator<<(std::ostream &os, const Request &req) {
 }
 
 
-bool Request::verifyheaders(Server *server, Routes *routes) {
-    setServer(server);
-    setRoute(routes);
-    if (std::find(server->getServerName().begin(), server->getServerName().end(), host) == server->getServerName().end()) {
-        errorCode = 400;
-        return false; 
-    }  
-    if (getBodyLength() == -1 && method == POST) {
-        errorCode = 411;
-        return false;
-    }
-    if (getBodyLength() > server->getClientMaxBodySize()) {
-        errorCode = 413;
-        return false;   
-    }
-    if (body.size() > (unsigned long) server->getClientMaxBodySize()) {
-        errorCode = 413;
-        return false;
-    }
-	if (body.size() < body_length)
-		return false;
-    return true;
-}
-
-
-
-bool Request::parseBody(std::string data) {
-	if (headers.find("Transfer-Encoding") != headers.end()) {
-		std::string transferEncoding = headers.at("Transfer-Encoding");
-		if (transferEncoding == "Chunked") {
-			size_t chuckSizeStrPos = data.find(CRLF);
-			std::string chuckSizeStr = data.substr(0, chuckSizeStrPos);
+void Request::parseBody() {
+	if (headers.find("transfer-encoding") != headers.end()) {
+		std::string transferEncoding = headers.at("transfer-encoding");
+		if (transferEncoding == "chunked") {
+			size_t chuckSizeStrPos = req.find(CRLF);
+			std::string chuckSizeStr = req.substr(0, chuckSizeStrPos);
 			std::stringstream ss(chuckSizeStr);
 			std::size_t chuckSize = 0;
 			ss >> std::hex >> chuckSize;
-			if (data.find("\r\n0\r\n") == 0 || data.find("0\r\n") == 0) {
-				return true;
+			if (req.find("\r\n0\r\n") == 0 || req.find("0\r\n") == 0) {
+				isBodyParser = true;
+				return;
 			}
-			if (data.size() < chuckSize)
-				return false;
-			data.erase(0, chuckSizeStr.size() + 2);
-			body.append(data.substr(0, chuckSize));
-			data.erase(0, chuckSize);
-			if (data.find("\r\n0\r\n") == 0 || data.find("0\r\n") == 0) {
-				return true;
+			if (req.size() < chuckSize)
+				return;
+			req.erase(0, chuckSizeStr.size() + 2);
+			req.append(req.substr(0, chuckSize));
+			req.erase(0, chuckSize);
+			if (req.find("\r\n0\r\n") == 0 || req.find("0\r\n") == 0) {
+				isBodyParser = true;
+				return;
 			}
-			if (data.find(CRLF) == 0)
-				data.erase(0, 2);
-			if (data.size() > 0)
-				parseBody(data);
-			return false;
+			if (req.find(CRLF) == 0)
+				req.erase(0, 2);
+			if (req.size() > 0)
+				parseBody();
+			return;
 		}
 	}
 	if (body_length > 0) {
-		body = data.substr(0, body_length);
-		data.erase(0, body_length);
-		return true;
+		if (getBodyLength() == -1 && method == POST) {
+			errorCode = 411;
+			return ;
+		}
+		if (getBodyLength() > server->getClientMaxBodySize()) {
+			errorCode = 413;
+			return ;
+		}
+		if (req.size() > (unsigned long) server->getClientMaxBodySize()) {
+			errorCode = 413;
+			return ;
+		}
+		if (req.size() < body_length)
+			return ;
+		body = req.substr(0, body_length);
+		req.erase(0, body_length);
+		isBodyParser = true;
+		return;
 	}
-	return true;
+	isBodyParser = true;
 }
 
 bool Request::isMultiPart()
@@ -223,13 +162,11 @@ std::string Request::getConfig(std::string conf) {
 		return "";
 	}
 }
-
 void Request::handleMultipart() {
 	std::string _body = body;
 	std::string contentType = headers.at("content-type");
 	std::string boundary = "--" + contentType.substr(contentType.find("boundary=") + 9);
 	std::string uploadPath = getConfig("root") + getConfig("upload_directory");
-
 	if (!utils::pathExists(uploadPath))
 		mkdir(uploadPath.c_str(), 0777);
 
@@ -328,8 +265,8 @@ void Request::execute(Response *response) {
 			}
 		}
 		if (notFound) {
-			std::string autoindex = getConfig("autoindex");
-			if (autoindex == "true" ){
+			std::string autoindex = getConfig("auto_index");
+			if (autoindex == "on" ){
 				response->renderDirectory(getConfig("root"), path);
 				notFound = false;
 			}
