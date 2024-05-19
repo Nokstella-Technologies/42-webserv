@@ -3,7 +3,6 @@ UNITEST			=	unitest
 CC				=	c++
 
 CFLAGS			=	-Wall -Wextra -Werror -std=c++98 -g3 -fsanitize=address
-CFLAGSTEST 		= 	-g3 -std=c++11
 
 HEADER			=	-I src/header
 
@@ -30,6 +29,9 @@ $(OBJ_DIR)/%.o:		$(SOURCES_DIR)/%.cpp
 					$(CC) $(CFLAGS) $(HEADER) -c $< -o $@
 
 all:				$(NAME)
+
+valgrind: $(NAME)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --tool=memcheck ./webserver
 
 $(NAME):			$(OBJ_DIR) $(OBJS)
 					$(CC) $(CFLAGS) $(HEADER) $(OBJS) -o $(NAME)

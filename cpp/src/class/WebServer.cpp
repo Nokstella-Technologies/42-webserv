@@ -18,6 +18,9 @@ void stop(int sig) {
 
 WebServer::WebServer()
 {
+     for (int i = 0; i < MAX_EVENTS; i++) {
+        _events[i].data.ptr = NULL;
+    }
 }
 
 
@@ -189,6 +192,7 @@ void WebServer::_eppollWait() {
 				epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, connection->fd, 0);
 				close(connection->fd);
 				delete connection;
+                _events[i].data.ptr = NULL;
 				continue;
 			}
 
@@ -198,6 +202,7 @@ void WebServer::_eppollWait() {
                     epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, connection->fd, 0);
                     close(connection->fd);
                     delete connection;
+                    _events[i].data.ptr = NULL;
                     continue;
                 }
                 server->parser(&connection->req);
@@ -215,6 +220,7 @@ void WebServer::_eppollWait() {
                 epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, connection->fd, 0);
 				close(connection->fd);
 				delete connection;
+                _events[i].data.ptr = NULL;
 				continue;
 			}
 		}
